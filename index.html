@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MatheAnimals</title>
+  <style>
+    @keyframes backgroundShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    body {
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      background: linear-gradient(270deg, #2193b0, #6dd5ed, #2193b0);
+      background-size: 600% 600%;
+      animation: backgroundShift 15s ease infinite;
+      text-align: center;
+      padding: 20px;
+      user-select: none;
+      color: #003f5c;
+    }
+
+    #container {
+      max-width: 420px;
+      margin: auto;
+      background: #bbdefb;
+      border-radius: 25px;
+      padding: 25px;
+      box-shadow: 0 0 25px #1976d2cc;
+      color: #0d47a1;
+    }
+
+    h1 {
+      color: #0d47a1;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 6px #82b1ffcc;
+      font-size: 2.8em;
+    }
+
+    #progressBarContainer {
+      background: #0d47a1aa;
+      border-radius: 20px;
+      margin: 15px 0 30px;
+      height: 28px;
+      width: 100%;
+      overflow: hidden;
+      box-shadow: inset 0 0 10px #1565c088;
+    }
+
+    #progressBar {
+      background: #82b1ff;
+      height: 100%;
+      width: 0%;
+      transition: width 0.7s ease;
+      border-radius: 20px;
+    }
+
+    #levelInfo, #question {
+      font-size: 1.8em;
+      margin: 12px 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #options button {
+      background: #0d47a1;
+      color: white;
+      border: none;
+      border-radius: 15px;
+      margin: 12px 8px;
+      font-size: 1.5em;
+      padding: 15px 25px;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.2s;
+      min-width: 75px;
+      box-shadow: 0 5px 15px #1565c0cc;
+    }
+
+    #options button:hover {
+      background: #08306b;
+      transform: scale(1.1);
+    }
+
+    #options button:disabled {
+      background: #888888;
+      cursor: default;
+      box-shadow: none;
+      transform: none;
+    }
+
+    #feedback {
+      font-size: 1.5em;
+      margin-top: 22px;
+      height: 32px;
+      font-weight: bold;
+      min-height: 48px;
+      color: #0d47a1;
+    }
+
+    button#restart {
+      margin-top: 30px;
+      background: #0d47a1;
+      color: white;
+      border: none;
+      border-radius: 20px;
+      padding: 15px 40px;
+      font-size: 1.4em;
+      cursor: pointer;
+      box-shadow: 0 8px 15px #1565c0cc;
+    }
+
+    button#restart:hover {
+      background: #08306b;
+      transform: scale(1.05);
+    }
+
+    .fade-in {
+      animation: fadeIn 0.8s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      from {opacity: 0; transform: translateY(10px);}
+      to {opacity: 1; transform: translateY(0);}
+    }
+
+    #animalEmoji {
+      font-size: 2em;
+      animation: bounce 1.2s ease infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <h1>MatheAnimals🐾</h1>
+    <div id="levelInfo"></div>
+    <div id="progressBarContainer">
+      <div id="progressBar"></div>
+    </div>
+    <div id="question"></div>
+    <div id="options"></div>
+    <div id="feedback"></div>
+  </div>
+
+  <!-- Aplausos -->
+  <audio id="applauseSound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_1f2d8b2522.mp3"></audio>
+
+  <script>
+    const animalEmojis = [
+      "🐰", "🦊", "🐻",
+      "🐨", "🐸", "🐯",
+      "🐼", "🦁", "🦉",
+      "🦄", "🐵", "🐤",
+      "🦔", "🐢", "🐙"
+    ];
+
+    const levels = [
+      [ { q: [2, "+", 3], options: [4, 5, 6], answer: 5 },
+        { q: [7, "-", 4], options: [3, 2, 4], answer: 3 },
+        { q: [1, "+", 6], options: [7, 8, 9], answer: 7 } ],
+      [ { q: [5, "+", 4], options: [8, 9, 10], answer: 9 },
+        { q: [10, "-", 6], options: [3, 4, 5], answer: 4 },
+        { q: [3, "+", 5], options: [7, 8, 9], answer: 8 } ],
+      [ { q: [8, "-", 3], options: [4, 5, 6], answer: 5 },
+        { q: [4, "+", 7], options: [11, 10, 12], answer: 11 },
+        { q: [9, "-", 5], options: [3, 4, 5], answer: 4 } ],
+      [ { q: [6, "+", 5], options: [10, 11, 12], answer: 11 },
+        { q: [12, "-", 7], options: [5, 4, 6], answer: 5 },
+        { q: [7, "+", 8], options: [14, 15, 16], answer: 15 } ],
+      [ { q: [9, "+", 6], options: [15, 16, 14], answer: 15 },
+        { q: [15, "-", 9], options: [5, 6, 7], answer: 6 },
+        { q: [11, "+", 4], options: [15, 16, 14], answer: 15 } ]
+    ];
+
+    let currentLevel = 0;
+    let currentQuestionIndex = 0;
+    let isSpeaking = false;
+
+    const questionEl = document.getElementById('question');
+    const optionsDiv = document.getElementById('options');
+    const feedbackEl = document.getElementById('feedback');
+    const levelInfo = document.getElementById('levelInfo');
+    const progressBar = document.getElementById('progressBar');
+    const applause = document.getElementById('applauseSound');
+
+    function speak(text) {
+      return new Promise(resolve => {
+        if (!('speechSynthesis' in window)) {
+          resolve();
+          return;
+        }
+        speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'es-ES';
+        utterance.rate = 0.9;
+        utterance.onend = () => resolve();
+        speechSynthesis.speak(utterance);
+      });
+    }
+
+    function questionToSpeechText(arr) {
+      let [a, op, b] = arr;
+      return `${a} ${op === "+" ? "más" : "menos"} ${b}`;
+    }
+
+    function updateProgress() {
+      levelInfo.textContent = `Nivel ${currentLevel + 1} - Pregunta ${currentQuestionIndex + 1} de 3`;
+      const percent = ((currentLevel * 3 + currentQuestionIndex) / 15) * 100;
+      progressBar.style.width = percent + "%";
+    }
+
+    async function showQuestion() {
+      updateProgress();
+      const qObj = levels[currentLevel][currentQuestionIndex];
+      const emoji = animalEmojis[currentLevel * 3 + currentQuestionIndex] || "🐾";
+
+      questionEl.classList.remove('fade-in');
+      void questionEl.offsetWidth;
+      questionEl.classList.add('fade-in');
+      questionEl.innerHTML = `<span id="animalEmoji">${emoji}</span> ${qObj.q.join(" ")}`;
+
+      optionsDiv.innerHTML = '';
+      feedbackEl.textContent = '';
+      isSpeaking = true;
+      await speak(`¿Cuánto es ${questionToSpeechText(qObj.q)}?`);
+      isSpeaking = false;
+
+      qObj.options.forEach(opt => {
+        const btn = document.createElement("button");
+        btn.textContent = opt;
+        btn.onclick = () => checkAnswer(opt, qObj.answer);
+        optionsDiv.appendChild(btn);
+      });
+    }
+
+    function playTone(freq, duration) {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(freq, ctx.currentTime);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration / 1000);
+      osc.stop(ctx.currentTime + duration / 1000);
+    }
+
+    function playCorrectSound() { playTone(800, 300); }
+    function playIncorrectSound() { playTone(300, 600); }
+
+    async function checkAnswer(selected, answer) {
+      if (isSpeaking) return;
+      const buttons = optionsDiv.querySelectorAll("button");
+      buttons.forEach(btn => btn.disabled = true);
+
+      if (selected === answer) {
+        playCorrectSound();
+        feedbackEl.textContent = "¡Correcto! 🎉";
+        await speak(`Correcto, la respuesta es ${selected}`);
+        currentQuestionIndex++;
+
+        if (currentQuestionIndex === 3) {
+          currentLevel++;
+          currentQuestionIndex = 0;
+
+          if (currentLevel === levels.length) {
+            showFinalScreen();
+            return;
+          }
+
+          feedbackEl.textContent = `¡Pasaste al nivel ${currentLevel + 1}! 🎉`;
+          await speak(`¡Pasaste al nivel ${currentLevel + 1}!`);
+        }
+
+        setTimeout(showQuestion, 700);
+      } else {
+        playIncorrectSound();
+        feedbackEl.textContent = "Intenta de nuevo 😕";
+        await speak("Intenta de nuevo");
+        buttons.forEach(btn => btn.disabled = false);
+      }
+    }
+
+    async function showFinalScreen() {
+      const container = document.getElementById("container");
+      container.innerHTML = `
+        <h1>🎉 ¡Felicitaciones! 🎉</h1>
+        <p>Completaste todos los niveles de 🐾 MatheAnimals 🐾</p>
+        <button id="restart">Jugar otra vez</button>
+      `;
+      applause.play();
+      await speak("¡Felicitaciones! Completaste todos los niveles de MatheAnimals");
+      document.getElementById("restart").onclick = () => location.reload();
+    }
+
+    window.onload = showQuestion;
+  </script>
+</body>
+</html>
